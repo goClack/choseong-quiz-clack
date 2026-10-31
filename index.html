@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f6">
+  <meta name="description" content="동물, 음식, 사물 초성을 보고 정답을 맞히는 초성퀴즈 게임입니다.">
+  <title>알쏭달쏭 초성퀴즈</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --green: #b7d7a8;
+      --green-dark: #405a36;
+      --green-border: #9fbe91;
+      --green-track: #eaf0e6;
+      --orange: #d98435;
+      --yellow: #fff5cf;
+      --yellow-border: #e2c76b;
+      --yellow-ink: #735d1d;
+      --red: #b64037;
+      --ink: #292d29;
+      --muted: #707770;
+      --line: #d7dcd7;
+      --row: #f4f6f3;
+      --surface: #fff;
+      --page: #f7f8f6;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--page);
+      font-size: 12px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--page); }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .topbar {
+      height: 54px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; background: var(--surface); border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .brand-mark { width: 27px; height: 27px; display: grid; place-items: center; background: #e8f0e3; border: 1px solid #d2dfca; color: var(--green-dark); font-size: 14px; }
+    .player-info { display: flex; align-items: center; gap: 24px; color: var(--muted); }
+    .player-info strong { margin-left: 5px; color: var(--ink); font-weight: 600; }
+    .score { color: var(--green-dark) !important; font-variant-numeric: tabular-nums; }
+    .score-count { margin-left: 4px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .player-name-label { color: var(--muted); }
+    dialog.name-dialog { width: min(420px, calc(100% - 32px)); padding: 22px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: var(--surface); }
+    dialog.name-dialog::backdrop { background: rgb(30 35 30 / 38%); }
+    .name-dialog h2 { margin: 0; font-size: 17px; font-weight: 600; }
+    .name-dialog p { margin: 7px 0 15px; color: var(--muted); line-height: 1.5; }
+    .name-label { display: block; margin-bottom: 6px; color: var(--muted); }
+    .name-input { width: 100%; height: 42px; padding: 0 10px; border: 1px solid #aeb8ab; border-bottom-width: 3px; border-radius: 4px; font-size: 16px; }
+    .name-input:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 2px; }
+    .count-legend { margin: 14px 0 7px; color: var(--muted); }
+    .count-options { display: flex; gap: 7px; }
+    .count-option { flex: 1; min-height: 38px; padding: 5px 10px; border: 1px solid #cbd1ca; border-bottom-width: 3px; border-radius: 4px; background: linear-gradient(#fff, #f3f5f2); color: #545b54; font-weight: 500; cursor: pointer; }
+    .count-option[aria-pressed="true"] { color: #293a24; background: var(--green); border-color: var(--green-border); border-bottom-color: #86a978; font-weight: 600; }
+    .count-option:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 2px; }
+    .category-legend { margin: 14px 0 7px; color: var(--muted); }
+    .dialog-category-option { flex: 1; min-height: 38px; padding: 5px 10px; border: 1px solid #cbd1ca; border-bottom-width: 3px; border-radius: 4px; background: linear-gradient(#fff, #f3f5f2); color: #545b54; font-weight: 500; cursor: pointer; }
+    .dialog-category-option[aria-pressed="true"] { color: #6a431f; background: #f8dfc4; border-color: #e6b77f; border-bottom-color: #d99b58; font-weight: 600; }
+    .dialog-category-option:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+    .name-error { min-height: 18px; padding-top: 5px; color: var(--red); }
+    .name-submit { width: 100%; margin-top: 8px; }
+    main { width: min(980px, calc(100% - 48px)); margin: 0 auto; padding: 23px 0 36px; }
+    .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+    h1 { margin: 0; font-size: 21px; line-height: 1.3; letter-spacing: -.03em; font-weight: 600; }
+    .subtitle { margin-top: 4px; color: var(--muted); }
+    .progress-label { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .category-tabs { display: flex; align-items: center; gap: 7px; padding: 0 0 11px; border-bottom: 1px solid var(--line); }
+    .category-label { margin-right: 5px; color: var(--muted); }
+    .tab {
+      min-width: 72px; min-height: 34px; padding: 5px 14px; border: 1px solid #cbd1ca; border-bottom-width: 3px;
+      border-radius: 4px; background: linear-gradient(#fff, #f3f5f2); color: #545b54; font-weight: 500;
+      cursor: pointer; transition: transform 80ms ease, background 80ms ease;
+    }
+    .tab:hover { border-color: #adb6aa; }
+    .tab:active, .button:active { transform: translateY(2px); border-bottom-width: 1px; }
+    .tab[aria-pressed="true"] { color: #293a24; background: var(--green); border-color: var(--green-border); border-bottom-color: #86a978; font-weight: 600; }
+    .game-layout { display: grid; grid-template-columns: minmax(0, 1fr) 254px; gap: 22px; padding-top: 17px; }
+    .game-main { min-width: 0; }
+    .question-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--muted); }
+    .difficulty { color: #66705f; }
+    .question-panel { min-height: 224px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px 16px 28px; border: 1px solid var(--line); background: var(--surface); }
+    .question-caption { color: var(--muted); }
+    .initials { margin: 13px 0 11px; padding-left: .16em; color: var(--green-dark); font-size: clamp(54px, 8vw, 76px); line-height: 1.15; letter-spacing: .16em; font-weight: 600; }
+    .question-help { min-height: 16px; color: var(--muted); text-align: center; }
+    .question-help.classification { color: var(--green-dark); font-weight: 600; }
+    .completion-message { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+    .completion-message[hidden] { display: none; }
+    .completion-title { color: var(--green-dark); font-size: 24px; font-weight: 600; }
+    .completion-detail { color: var(--ink); font-size: 14px; }
+    .completion-detail strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .quiz-complete .question-caption,
+    .quiz-complete .initials,
+    .quiz-complete .question-help,
+    .quiz-complete .timer-track,
+    .quiz-complete .answer-heading,
+    .quiz-complete .hint-reveal,
+    .quiz-complete .answer-row,
+    .quiz-complete .feedback,
+    .quiz-complete .next-row,
+    .quiz-complete .side-panel { display: none; }
+    .quiz-complete .game-layout { grid-template-columns: minmax(0, 1fr); }
+    .timer-track { height: 4px; position: absolute; bottom: 0; left: 0; width: 100%; overflow: hidden; background: var(--green-track); }
+    .timer-fill { height: 100%; width: 100%; background: var(--green); transition: width 1s linear, background 160ms ease; }
+    .answer-heading { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px; color: var(--muted); }
+    .hint-reveal { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 8px; padding: 7px 9px; background: var(--yellow); border-left: 2px solid var(--yellow-border); color: var(--yellow-ink); }
+    .hint-reveal[hidden] { display: none; }
+    .answer-row { display: flex; gap: 8px; }
+    .answer-input { min-width: 0; flex: 1; height: 42px; padding: 0 11px; border: 1px solid #aeb8ab; border-bottom-width: 3px; border-radius: 4px; color: var(--ink); background: #fff; font-size: 16px; }
+    .answer-input::placeholder { color: #969e96; font-size: 12px; }
+    .answer-input:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 2px; }
+    .button { min-height: 42px; padding: 0 15px; border: 1px solid #b9c2b5; border-bottom-width: 3px; border-radius: 4px; background: linear-gradient(#fff, #f1f4ef); color: #424a41; font-weight: 600; cursor: pointer; }
+    .button:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 2px; }
+    .button-primary { min-width: 104px; border-color: var(--green-border); border-bottom-color: #86a978; background: var(--green); color: #293a24; }
+    .feedback { min-height: 20px; padding-top: 6px; color: var(--muted); }
+    .feedback.success { color: var(--green-dark); font-weight: 600; }
+    .feedback.error { color: var(--red); }
+    .side-panel { padding-left: 18px; border-left: 1px solid var(--line); }
+    .side-title { margin: 1px 0 10px; font-size: 12px; font-weight: 600; }
+    .timer-info { padding: 11px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .timer-label { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+    .seconds { margin-top: 7px; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .seconds small { color: var(--muted); font-size: 11px; font-weight: 400; }
+    .hint-button { width: 100%; margin-top: 12px; border-color: var(--yellow-border); border-bottom-color: #cfb14e; background: linear-gradient(#fffbe9, #fff2bd); color: var(--yellow-ink); }
+    .hint-note { margin-top: 7px; color: var(--muted); line-height: 1.5; }
+    .side-note { margin-top: 20px; padding-top: 11px; border-top: 1px solid var(--line); color: var(--muted); line-height: 1.55; }
+    .side-note strong { color: #596159; font-weight: 500; }
+    .game-footer { margin-top: 18px; padding-top: 9px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .next-row { min-height: 39px; display: flex; justify-content: flex-end; align-items: center; }
+    .next-button { min-height: 34px; padding: 0 13px; }
+    .next-button[hidden] { display: none; }
+    @media (max-width: 680px) {
+      .topbar { height: 49px; padding: 0 14px; }
+      .player-info { gap: 12px; }
+      .player-name-label { display: none; }
+      main { width: calc(100% - 28px); padding: 16px 0 26px; }
+      h1 { font-size: 18px; }
+      .heading { margin-bottom: 13px; }
+      .category-tabs { gap: 6px; }
+      .category-label { display: none; }
+      .tab { flex: 1; min-width: 0; min-height: 42px; padding-inline: 9px; }
+      .game-layout { display: block; padding-top: 13px; }
+      .question-panel { min-height: 185px; }
+      .side-panel { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 0 14px; margin-top: 12px; padding: 0; border: 0; }
+      .side-title { grid-column: 1 / -1; margin-bottom: 6px; }
+      .timer-info { padding: 7px 0; }
+      .hint-button { min-height: 42px; margin-top: 7px; }
+      .hint-note { display: none; }
+      .side-note { grid-column: 1 / -1; margin-top: 10px; padding-top: 8px; }
+      .game-footer { margin-top: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">ㄱ</span><span>초성퀴즈</span></div>
+    <div class="player-info">
+      <span>점수 <strong class="score" id="score">0</strong><span class="score-count" id="score-count">(0/20)</span></span>
+      <span><span class="player-name-label">도전자</span><strong id="player-name"></strong></span>
+    </div>
+  </header>
+
+  <main>
+    <div class="heading">
+      <div><h1>알쏭달쏭 초성퀴즈!</h1><div class="subtitle">초성을 보고 정답을 맞혀보세요.</div></div>
+      <span class="progress-label" id="progress-label">문제 1 / 100</span>
+    </div>
+
+    <nav class="category-tabs" id="category-tabs" aria-label="퀴즈 카테고리"></nav>
+
+    <div class="game-layout">
+      <section class="game-main" aria-label="퀴즈 문제">
+        <div class="question-meta">
+          <span id="category-label">동물 카테고리</span>
+          <span class="difficulty" id="difficulty">난이도 ★☆☆☆☆</span>
+        </div>
+        <div class="question-panel" id="question-panel">
+          <span class="question-caption" id="question-caption">다음 초성의 정답은?</span>
+          <strong class="initials" id="initials">ㄱㅇㅇ</strong>
+          <span class="question-help" id="question-help">정답을 입력하고 확인을 눌러주세요.</span>
+          <div class="timer-track" aria-hidden="true"><div class="timer-fill" id="timer-fill"></div></div>
+          <div class="completion-message" id="completion-message" hidden aria-live="polite">
+            <strong class="completion-title">완료!</strong>
+            <span class="completion-detail">점수 : <strong id="final-score">0</strong>점</span>
+            <span class="completion-detail">총 <strong id="final-total">20</strong>문제 중에 <strong id="final-correct">0</strong>문제 맞췄습니다.</span>
+          </div>
+        </div>
+        <div class="answer-heading"><label for="answer">정답 입력</label><span>한글로 입력</span></div>
+        <div class="hint-reveal" id="hint-reveal" hidden><span id="hint-text"></span><span>−50점</span></div>
+        <form class="answer-row" id="answer-form">
+          <input class="answer-input" id="answer" name="answer" type="text" autocomplete="off" placeholder="정답을 입력하세요" aria-describedby="feedback">
+          <button class="button button-primary" id="submit-button" type="submit">정답 확인</button>
+        </form>
+        <div class="feedback" id="feedback" aria-live="polite">정답을 맞히면 100점을 얻어요.</div>
+        <div class="next-row"><button class="button next-button" id="next-button" type="button" hidden>다음 문제</button></div>
+      </section>
+
+      <aside class="side-panel" aria-label="게임 도움말">
+        <h2 class="side-title">게임 정보</h2>
+        <div class="timer-info">
+          <div class="timer-label"><span>남은 시간</span><span>제한 시간 30초</span></div>
+          <div class="seconds"><span id="seconds">30</span> <small>초</small></div>
+        </div>
+        <div>
+          <button class="button hint-button" id="hint-button" type="button">힌트 보기</button>
+          <div class="hint-note">힌트를 사용하면 50점이 차감됩니다.</div>
+        </div>
+        <div class="side-note"><strong>모바일 입력</strong><br>정답 입력란을 누르면 기기의 한글 키보드가 열립니다.</div>
+      </aside>
+    </div>
+    <footer class="game-footer"><span id="category-footer">동물 문제</span><span>제한 시간 안에 정답을 입력하세요.</span></footer>
+  </main>
+  <dialog class="name-dialog" id="name-dialog" aria-labelledby="name-dialog-title" aria-describedby="name-dialog-description">
+    <form id="name-form">
+      <h2 id="name-dialog-title">퀴즈 시작</h2>
+      <p id="name-dialog-description">플레이어 이름과 이번에 풀 문제 수를 선택해주세요.</p>
+      <label class="name-label" for="player-name-input">이름</label>
+      <input class="name-input" id="player-name-input" name="playerName" type="text" maxlength="24" autocomplete="name" placeholder="이름을 입력하세요" required autofocus>
+      <div class="category-legend" id="start-category-legend">문제 종류</div>
+      <div class="count-options" id="start-category-options" role="group" aria-labelledby="start-category-legend"></div>
+      <div class="count-legend" id="count-legend">문제 수</div>
+      <div class="count-options" role="group" aria-labelledby="count-legend">
+        <button class="count-option" type="button" data-count="20" aria-pressed="true">20문제</button>
+        <button class="count-option" type="button" data-count="30" aria-pressed="false">30문제</button>
+        <button class="count-option" type="button" data-count="50" aria-pressed="false">50문제</button>
+      </div>
+      <div class="name-error" id="name-error" aria-live="polite"></div>
+      <button class="button button-primary name-submit" type="submit">퀴즈 시작</button>
+    </form>
+  </dialog>
+  <script src="questions.js"></script>
+  <script>
+    (() => {
+      const categories = Object.keys(window.QUIZ_QUESTIONS);
+      const state = { category: categories[0], deck: [], index: 0, questionCount: 20, correctCount: 0, score: 0, seconds: 30, hintUsed: false, locked: false, interval: null };
+      const $ = (selector) => document.querySelector(selector);
+      const tabs = $("#category-tabs");
+
+      function initialsOf(word) {
+        const initialJamo = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+        return [...word].map((character) => {
+          const code = character.charCodeAt(0) - 0xac00;
+          return code >= 0 && code <= 11171 ? initialJamo[Math.floor(code / 588)] : character;
+        }).join("");
+      }
+
+      function shuffle(items) {
+        const copy = items.slice();
+        for (let index = copy.length - 1; index > 0; index -= 1) {
+          const other = Math.floor(Math.random() * (index + 1));
+          [copy[index], copy[other]] = [copy[other], copy[index]];
+        }
+        return copy;
+      }
+
+      function renderTabs() {
+        tabs.innerHTML = categories.map((category) => `<button class="tab" type="button" aria-pressed="${category === state.category}" data-category="${category}">${category}</button>`).join("");
+        tabs.querySelectorAll(".tab").forEach((button) => button.addEventListener("click", () => selectCategory(button.dataset.category)));
+      }
+
+      function currentQuestion() { return state.deck[state.index]; }
+
+      function render() {
+        const question = currentQuestion();
+        $("#score").textContent = state.score.toLocaleString("en-US");
+        $("#score-count").textContent = `(${state.correctCount}/${state.questionCount})`;
+        $("#category-label").textContent = `${state.category} 카테고리`;
+        $("#category-footer").textContent = `${state.category} 문제`;
+        $("#progress-label").textContent = `문제 ${Math.min(state.index + 1, state.deck.length)} / ${state.deck.length}`;
+        $("#seconds").textContent = String(state.seconds);
+        $("#timer-fill").style.width = `${(state.seconds / 30) * 100}%`;
+        $("#timer-fill").style.background = state.seconds <= 7 ? "#b64037" : "var(--green)";
+        tabs.querySelectorAll(".tab").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.category === state.category)));
+
+        if (!question) {
+          document.body.classList.add("quiz-complete");
+          $("#question-help").classList.remove("classification");
+          $("#completion-message").hidden = false;
+          $("#final-score").textContent = state.score.toLocaleString("en-US");
+          $("#final-total").textContent = String(state.questionCount);
+          $("#final-correct").textContent = String(state.correctCount);
+          $("#difficulty").textContent = "";
+          $("#answer").disabled = true;
+          $("#submit-button").disabled = true;
+          $("#hint-button").disabled = true;
+          $("#next-button").hidden = true;
+          return;
+        }
+
+        document.body.classList.remove("quiz-complete");
+        $("#completion-message").hidden = true;
+        $("#initials").textContent = initialsOf(question.answer);
+        $("#difficulty").textContent = `난이도 ${"★".repeat(question.difficulty)}${"☆".repeat(5 - question.difficulty)}`;
+        $("#hint-text").textContent = `힌트 · ${question.hint}`;
+        if (state.locked) {
+          $("#question-help").classList.remove("classification");
+        } else if (state.seconds <= 10) {
+          $("#question-help").textContent = `분류 · ${question.classification}`;
+          $("#question-help").classList.add("classification");
+        } else {
+          $("#question-help").textContent = "정답을 입력하고 확인을 눌러주세요.";
+          $("#question-help").classList.remove("classification");
+        }
+        $("#hint-reveal").hidden = !state.hintUsed;
+        $("#hint-button").disabled = state.hintUsed || state.locked;
+        $("#answer").disabled = state.locked;
+        $("#submit-button").disabled = state.locked;
+        $("#next-button").hidden = !state.locked;
+      }
+
+      function stopTimer() {
+        if (state.interval) window.clearInterval(state.interval);
+        state.interval = null;
+      }
+
+      function startTimer() {
+        stopTimer();
+        state.seconds = 30;
+        render();
+        state.interval = window.setInterval(() => {
+          if (state.locked) return;
+          state.seconds -= 1;
+          if (state.seconds <= 0) {
+            state.seconds = 0;
+            state.locked = true;
+            stopTimer();
+            $("#question-help").textContent = `시간 종료 · 정답은 ${currentQuestion().answer}입니다.`;
+            $("#feedback").textContent = "다음 문제를 눌러 계속할 수 있어요.";
+          }
+          render();
+          if (state.locked && currentQuestion()) $("#next-button").focus({ preventScroll: true });
+        }, 1000);
+      }
+
+      function selectCategory(category) {
+        stopTimer();
+        state.category = category;
+        const questions = window.QUIZ_QUESTIONS[category];
+        state.deck = shuffle(questions).slice(0, state.questionCount);
+        state.index = 0;
+        state.score = 0;
+        state.correctCount = 0;
+        state.hintUsed = false;
+        state.locked = false;
+        $("#answer").value = "";
+        $("#feedback").textContent = "정답을 맞히면 100점을 얻어요.";
+        $("#feedback").className = "feedback";
+        $("#question-help").textContent = "정답을 입력하고 확인을 눌러주세요.";
+        $("#answer").disabled = false;
+        $("#submit-button").disabled = false;
+        $("#hint-button").disabled = false;
+        $("#next-button").hidden = true;
+        renderTabs();
+        startTimer();
+      }
+
+      function nextQuestion() {
+        state.index += 1;
+        if (state.index >= state.deck.length) {
+          state.locked = true;
+          stopTimer();
+          render();
+          return;
+        }
+        state.hintUsed = false;
+        state.locked = false;
+        $("#answer").value = "";
+        $("#feedback").textContent = "정답을 맞히면 100점을 얻어요.";
+        $("#feedback").className = "feedback";
+        $("#question-help").textContent = "정답을 입력하고 확인을 눌러주세요.";
+        startTimer();
+        $("#answer").focus({ preventScroll: true });
+      }
+
+      $("#hint-button").addEventListener("click", () => {
+        if (state.hintUsed || state.locked) return;
+        state.hintUsed = true;
+        state.score = Math.max(0, state.score - 50);
+        $("#feedback").textContent = "힌트를 확인했어요. 정답을 입력해보세요.";
+        $("#feedback").className = "feedback";
+        render();
+      });
+
+      $("#answer-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (state.locked) return;
+        const answer = $("#answer").value.trim().replace(/\s+/g, "");
+        const feedback = $("#feedback");
+        feedback.className = "feedback";
+        if (!answer) {
+          feedback.textContent = "정답을 입력해주세요.";
+          feedback.classList.add("error");
+          $("#answer").focus();
+          return;
+        }
+        if (answer === currentQuestion().answer.replace(/\s+/g, "")) {
+          state.score += 100;
+          state.correctCount += 1;
+          state.locked = true;
+          stopTimer();
+          $("#question-help").textContent = `정답 · ${currentQuestion().answer}`;
+          feedback.textContent = "정답입니다! 100점을 획득했어요.";
+          feedback.classList.add("success");
+          render();
+          $("#next-button").focus({ preventScroll: true });
+        } else {
+          feedback.textContent = "아쉬워요. 초성을 다시 확인해보세요.";
+          feedback.classList.add("error");
+        }
+      });
+
+      $("#next-button").addEventListener("click", nextQuestion);
+      const nameDialog = $("#name-dialog");
+      const nameInput = $("#player-name-input");
+      const countButtons = [...document.querySelectorAll(".count-option")];
+      let nameComposing = false;
+      nameInput.addEventListener("compositionstart", () => { nameComposing = true; });
+      nameInput.addEventListener("compositionend", () => { nameComposing = false; });
+      nameInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.isComposing || event.keyCode === 229 || nameComposing)) event.preventDefault();
+      });
+      const startCategoryOptions = $("#start-category-options");
+      startCategoryOptions.innerHTML = categories.map((category) => `<button class="dialog-category-option" type="button" aria-pressed="${category === state.category}" data-category="${category}">${category}</button>`).join("");
+      const categoryButtons = [...startCategoryOptions.querySelectorAll(".dialog-category-option")];
+      categoryButtons.forEach((button) => button.addEventListener("click", () => {
+        state.category = button.dataset.category;
+        categoryButtons.forEach((option) => option.setAttribute("aria-pressed", String(option === button)));
+      }));
+      nameDialog.addEventListener("cancel", (event) => event.preventDefault());
+      countButtons.forEach((button) => button.addEventListener("click", () => {
+        state.questionCount = Number(button.dataset.count);
+        countButtons.forEach((option) => option.setAttribute("aria-pressed", String(option === button)));
+      }));
+      $("#name-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (nameComposing) return;
+        const playerName = nameInput.value.trim();
+        if (!playerName) {
+          $("#name-error").textContent = "이름을 입력해주세요.";
+          nameInput.focus();
+          return;
+        }
+        try {
+          window.localStorage.setItem("choseong-quiz-player-name", playerName);
+          window.localStorage.setItem("choseong-quiz-question-count", String(state.questionCount));
+          window.localStorage.setItem("choseong-quiz-category", state.category);
+        } catch (_) {}
+        $("#name-error").textContent = "";
+        $("#player-name").textContent = playerName;
+        nameDialog.close();
+        selectCategory(state.category);
+      });
+
+      renderTabs();
+      let savedName = "";
+      try {
+        savedName = window.localStorage.getItem("choseong-quiz-player-name") || "";
+        const savedCount = Number(window.localStorage.getItem("choseong-quiz-question-count"));
+        const savedCategory = window.localStorage.getItem("choseong-quiz-category");
+        if ([20, 30, 50].includes(savedCount)) state.questionCount = savedCount;
+        if (categories.includes(savedCategory)) state.category = savedCategory;
+      } catch (_) {}
+      nameInput.value = savedName.trim();
+      countButtons.forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.count) === state.questionCount)));
+      categoryButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.category === state.category)));
+      nameDialog.showModal();
+    })();
+  </script>
+</body>
+</html>
